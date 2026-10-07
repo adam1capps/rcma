@@ -42,9 +42,10 @@ p,h1{margin:0}
 #status.live{color:var(--green-ink)}
 #status.bad{color:var(--red-ink)}
 #title{font:700 24px/1.2 var(--display);color:var(--navy);min-height:1.2em}
-#notes{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;font:500 22px/1.45 var(--body);color:var(--ink)}
-#notes p{margin:0 0 .8em;white-space:pre-wrap;overflow-wrap:anywhere}
-#notes p:empty{margin:0;height:.4em}
+/* Notes: the text is sized by script to the largest font that fits the box, then the lines are spread evenly. */
+#notes{flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;justify-content:space-evenly;font:500 22px/1.35 var(--body);color:var(--ink)}
+#notes p{margin:0;padding:.18em 0;white-space:pre-wrap;overflow-wrap:anywhere}
+#notes p:empty{padding:0;height:.3em}
 #notes.empty{color:var(--muted)}
 
 @media (min-width:1100px) and (orientation:landscape){
@@ -53,7 +54,6 @@ p,h1{margin:0}
   #time{font-size:44px}
   #panel{height:100%;border-top:0;border-left:3px solid var(--orange);padding:24px 28px calc(24px + env(safe-area-inset-bottom,0px))}
   #title{font-size:30px}
-  #notes{font-size:26px}
 }
 @media (prefers-reduced-motion:reduce){ .holder{transition:none} }
 </style>
@@ -101,11 +101,11 @@ p,h1{margin:0}
   /* Geometry: the main slot spans the column, the next slot is 46% wide, centered beneath. */
   function place(h,g){ h.style.left=g.left+"px"; h.style.top=g.top+"px"; h.style.width=g.width+"px"; h.style.height=g.height+"px"; }
   function layout(){
-    var W=stage.clientWidth, gap=36, nw=Math.round(W*0.46), mh=Math.round(W*9/16), nh=Math.round(nw*9/16);
+    var W=stage.clientWidth, narrow=window.innerWidth<700, gap=narrow?26:36, nw=Math.round(W*(narrow?0.34:0.46)), mh=Math.round(W*9/16), nh=Math.round(nw*9/16);
     slots.main={left:0,top:0,width:W,height:mh};
     slots.next={left:Math.round((W-nw)/2),top:mh+gap,width:nw,height:nh};
     stage.style.height=(mh+gap+nh)+"px";
-    nextLabel.style.top=(mh+9)+"px";
+    nextLabel.style.top=(mh+(narrow?5:9))+"px";
     if(!busy){ mainH.classList.add("jump"); nextH.classList.add("jump"); place(mainH,slots.main); place(nextH,slots.next); void stage.offsetWidth; mainH.classList.remove("jump"); nextH.classList.remove("jump"); }
   }
   window.addEventListener("resize",layout); layout();
@@ -170,7 +170,23 @@ p,h1{margin:0}
       notes.classList.remove("empty");
       t.split("\n").forEach(function(line){ var p=document.createElement("p"); p.textContent=line; notes.appendChild(p); });
     } else { notes.classList.add("empty"); var p=document.createElement("p"); p.textContent="No notes yet"; notes.appendChild(p); }
+    fit();
   }
+  /* Largest font size, 12 to 40 px, at which every line fits the notes box with no scrolling. Multi-line notes
+     keep about 14% of the box free so the even spacing between bullets stays visible. */
+  function fit(){
+    var ps=Array.prototype.slice.call(notes.querySelectorAll("p")), room=ps.length>1?0.86:1;
+    var lo=12, hi=40, best=lo, fits=function(px){
+      notes.style.fontSize=px+"px";
+      var h=0; ps.forEach(function(p){ h+=p.getBoundingClientRect().height; });
+      return h<=notes.clientHeight*room+1;
+    };
+    if(fits(hi)){ best=hi; }
+    else { while(lo<=hi){ var mid=(lo+hi)>>1; if(fits(mid)){ best=mid; lo=mid+1; } else { hi=mid-1; } } }
+    notes.style.fontSize=best+"px";
+  }
+  window.addEventListener("resize",function(){ fit(); });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ fit(); });
 
   /* Run time: since the first click away from the opening slide. Loading the drive address fresh resets it. */
   function clock(){
