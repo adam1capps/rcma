@@ -1,0 +1,568 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>RCMA Talk Web Deck</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700;800&family=Poppins:wght@600;700;800&display=swap">
+<style>
+/* One 1920x1080 slide canvas scaled to fit the window, with a white control bar under it.
+   Single look on purpose: white content slides, navy on the opening, number and closing slides.
+   Red and green only where they mean bad and good. */
+:root{
+  --navy:#1e2c55; --deep:#151f3d; --orange:#ea993f; --orange-ink:#B26A14; --ink:#2d3344; --muted:#5a6377;
+  --line:#dfe3ea; --track:#e5e7eb; --red:#ef4444; --red-ink:#dc2626; --green:#10b981; --green-ink:#047857; --check:#059669;
+  --display:'Poppins',Verdana,Geneva,sans-serif; --body:'Montserrat',Verdana,Geneva,sans-serif;
+  --shadow:0 8px 40px rgba(30,44,85,.14);
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:#ffffff;color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-font-smoothing:antialiased}
+#app{height:100%;display:flex;flex-direction:column}
+#wrap{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#sizer{position:relative;flex:none}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;background:#ffffff;overflow:hidden;cursor:pointer;outline:none}
+p,h1,h2,h3{margin:0}
+
+/* bottom bar */
+#bar{flex:none;background:#ffffff;position:relative;display:flex;align-items:center;justify-content:flex-end;gap:14px;padding:10px 20px calc(10px + env(safe-area-inset-bottom,0px));min-height:60px}
+#prog{position:absolute;left:0;right:0;top:0;height:3px;background:var(--track)}
+#prog i{display:block;height:100%;width:0;background:var(--orange);transition:width .4s ease}
+#count{font:600 15px/1 var(--display);color:var(--muted);font-variant-numeric:tabular-nums;margin-right:6px}
+#bar button{width:42px;height:42px;border-radius:50%;border:2px solid var(--navy);background:#ffffff;color:var(--navy);cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+#bar button svg{width:20px;height:20px;display:block}
+#bar button:disabled{border-color:var(--line);cursor:default}
+#bar button:disabled svg{opacity:.3}
+#bar button:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+#full{margin-right:auto}
+
+/* slides: move in from the right with a short fade */
+.slide{position:absolute;inset:0;background:#ffffff;opacity:0;visibility:hidden;transform:translateX(70px);transition:opacity .4s ease,transform .45s ease,visibility 0s linear .45s}
+.slide.active{opacity:1;visibility:visible;transform:none;transition:opacity .4s ease,transform .45s ease}
+.slide.navy{background:var(--navy);color:#ffffff}
+[data-step]{opacity:0;visibility:hidden;transition:opacity .35s ease,visibility 0s linear .35s}
+[data-step].on{opacity:1;visibility:visible;transition:opacity .35s ease}
+.abs{position:absolute}
+
+/* content slide header */
+.hd{position:absolute;left:128px;top:112px;display:flex;flex-direction:column;gap:20px}
+.label{font:600 26px/1.2 var(--display);letter-spacing:4px;text-transform:uppercase;color:var(--muted)}
+h2{font:700 72px/1.1 var(--display);letter-spacing:-1px;color:var(--navy)}
+h2 em,h1 em{font-style:normal;color:var(--orange)}
+.rule{width:96px;height:8px;background:var(--orange);border-radius:4px}
+
+/* navy slides */
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:44px;padding:128px;text-align:center}
+.logos{display:flex;align-items:center;gap:56px}
+.logos img{height:112px;width:auto;display:block}
+#s1{background:linear-gradient(rgba(30,44,85,.88),rgba(30,44,85,.88)),url(img/bg-roof.jpg) center / cover no-repeat var(--deep)}
+#s1 h1{font:700 112px/1.1 var(--display);letter-spacing:-2px;color:#ffffff;width:1500px}
+#s1 .who{font:600 38px/1.3 var(--body);color:#ffffff}
+#s1 .when{font:500 30px/1.3 var(--body);color:#c9d1e6;margin-top:12px}
+.rule.big{width:120px}
+.num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:800 260px/1 var(--display);letter-spacing:-8px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.num.bad{color:var(--red)} .num.good{color:var(--green)}
+#s10 .thanks{position:absolute;left:128px;top:0;bottom:0;width:980px;display:flex;flex-direction:column;justify-content:center;gap:40px}
+#s10 .logos{gap:48px}
+#s10 .logos img{height:104px}
+#s10 h1{font:700 96px/1.08 var(--display);letter-spacing:-2px;color:#ffffff}
+#s10 .contact{display:flex;align-items:center;gap:44px;margin-top:8px}
+#s10 .scan{position:absolute;right:168px;top:0;bottom:0;width:520px;display:flex;flex-direction:column;justify-content:center;gap:24px}
+#s10 .scan p{font:700 44px/1.2 var(--display);color:#ffffff}
+#s10 .qr{width:520px;height:520px;border-radius:28px;background:#ffffff;display:block;max-width:none}
+#s10 .contact p{font:500 36px/1.45 var(--body);color:#dfe5f3;white-space:nowrap}
+#s10 .contact p.nm{font:700 52px/1.2 var(--display);color:#ffffff;margin-bottom:6px}
+
+
+/* cards */
+.card{background:#ffffff;border-radius:20px;box-shadow:var(--shadow);border-top:6px solid var(--navy)}
+.card.o{border-top-color:var(--orange)} .card.g{border-top-color:var(--green)}
+
+/* 3 brands */
+#s3 .cards{position:absolute;left:128px;top:318px;width:1664px;display:flex;gap:48px}
+#s3 .card{flex:1;padding:40px 56px;display:flex;flex-direction:column;gap:28px}
+#s3 .card img{height:120px;width:auto;align-self:flex-start;display:block}
+#s3 .card p{font:500 30px/1.3 var(--body);color:var(--ink);padding:18px 0;border-top:1px solid var(--line)}
+
+/* 4 dilemma */
+.moment{position:absolute;left:128px;top:318px;width:1664px}
+.study{position:absolute;left:128px;top:318px;width:1664px;border:2px solid var(--navy);border-radius:16px;overflow:hidden;background:#ffffff}
+.study .facts{display:flex;border-bottom:2px solid var(--navy)}
+.study .facts > div{flex:1;padding:28px 56px 28px}
+.study .facts > div + div{border-left:2px solid var(--navy)}
+.study .facts b{display:block;font:800 100px/1 var(--display);letter-spacing:-3px;color:var(--navy);font-variant-numeric:tabular-nums}
+.study .facts p{font:600 30px/1.3 var(--body);color:var(--ink);margin-top:10px}
+.study .eq{display:flex;align-items:flex-start;justify-content:center;gap:64px;padding:40px 56px 38px}
+.study .term b{display:block;font:800 160px/1 var(--display);letter-spacing:-5px;color:var(--navy);font-variant-numeric:tabular-nums}
+.study .term p{font:600 38px/1.2 var(--body);color:var(--ink);margin-top:10px}
+.study .eq > i{font:600 120px/160px var(--display);font-style:normal;color:var(--muted)}
+.study .foot{font:600 30px/1.35 var(--body);color:var(--navy);padding:24px 56px;border-top:2px solid var(--navy)}
+.study .res p{font:700 46px/1.2 var(--display);color:var(--navy);white-space:nowrap}
+.moment.who{left:280px;top:432px;width:1360px}
+.who h3{font:800 96px/1.1 var(--display);letter-spacing:-2px;color:var(--navy);margin-bottom:28px}
+.who p{font:500 46px/1.3 var(--body);color:var(--ink);padding:30px 0;border-top:1px solid var(--line)}
+
+/* 5 and 6 bars: 1px = $1,000 */
+.key{position:absolute;display:flex;gap:10px}
+.key p{font:500 26px/1.2 var(--body);color:var(--ink);display:flex;align-items:center;gap:14px}
+.key p.b{font-weight:600;color:var(--navy)}
+.sw{flex:none;width:22px;height:22px;border-radius:4px;display:block}
+.sw.n{background:var(--navy)} .sw.r{background:var(--red)} .sw.g{background:var(--green)}
+.brow{position:absolute;left:128px;width:1664px;height:88px;display:flex;align-items:center}
+.brow .bl{flex:none;width:330px;font:600 34px/1.2 var(--display);color:var(--navy)}
+.brow .coat{flex:none;width:400px;height:64px;background:var(--navy);border-radius:8px 0 0 8px}
+.brow .coat.solo{border-radius:8px}
+.brow .add{flex:none;height:64px;background:var(--red);border-radius:0 8px 8px 0;transition:width .7s cubic-bezier(.4,0,.2,1),background-color .5s ease}
+.brow .fig{position:relative;margin-left:28px;display:grid}
+.brow .fig > div{grid-area:1 / 1;display:flex;flex-direction:column;gap:6px;justify-content:center}
+.brow .tot{font:700 44px/1 var(--display);color:var(--navy);font-variant-numeric:tabular-nums}
+.brow .more{font:600 26px/1.2 var(--body);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.brow .more b{color:var(--red-ink);font-weight:600} .brow .more b.g{color:var(--green-ink)}
+#s5 .trio,#s6 .trio{position:absolute;left:128px;top:690px;width:1664px;display:flex;gap:32px}
+#s5 .trio .card,#s6 .trio .card{flex:1;padding:28px 36px;border-radius:16px;display:flex;flex-direction:column;gap:10px}
+#s5 .trio h3,#s6 .trio h3{font:700 36px/1.2 var(--display);color:var(--navy)}
+#s5 .trio p,#s6 .trio p{font:500 30px/1.3 var(--body);color:var(--ink)}
+#s6 .hero{position:absolute;left:821px;top:326px;height:296px;width:auto;max-width:none;display:block}
+.swap{display:grid!important}
+.swap > span{grid-area:1 / 1;display:flex;align-items:center;gap:14px;white-space:nowrap}
+.more.swap > span{display:block}
+#s6 .trio .card{position:relative;min-height:187px}
+#s6 .trio p{padding-right:64px}
+#s6 .trio .ck{position:absolute;right:28px;top:24px}
+.ck{flex:none;display:block}
+.a13{width:156px}
+.a25{width:300px}
+#s5[data-at="4"] .a13{width:52px;background:var(--green)}
+#s5[data-at="4"] .a25{width:100px;background:var(--green)}
+
+/* 7 how it works */
+#s7 .rail{position:absolute;left:151px;top:342px;width:3px;height:504px;background:var(--line)}
+#s7 .st{position:absolute;left:128px;height:48px;display:flex;align-items:center;gap:24px}
+#s7 .st i{flex:none;width:48px;height:48px;border:3px solid var(--navy);border-radius:50%;background:#ffffff;font:700 24px/42px var(--display);font-style:normal;text-align:center;color:var(--navy)}
+#s7 .st p{font:600 30px/1.2 var(--body);color:var(--navy);white-space:nowrap}
+#s7 .ph{position:absolute;left:1080px;top:318px;width:712px;height:552px;border-radius:20px;box-shadow:0 8px 40px rgba(30,44,85,.18);object-fit:cover;display:block;max-width:none}
+#s7 .duo{background:#ffffff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;gap:56px;padding:0 44px}
+#s7 .duo > img{flex:none;width:270px;height:auto;display:block;max-width:none}
+#s7 .duo > div{flex:none;display:flex;flex-direction:column;align-items:center;gap:22px}
+#s7 .duo > div img{width:250px;height:auto;display:block;max-width:none}
+#s7 .duo > div{gap:26px}
+#s7 .prog{display:flex;flex-direction:column;align-items:center;gap:10px}
+#s7 .prog .bar{display:block;width:120px;height:4px;border-radius:2px;background:linear-gradient(90deg,#5c7f71 0 50%,var(--orange) 50% 100%);margin-bottom:6px}
+#s7 .prog p{font:800 25px/1.2 var(--body);letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;text-align:center;margin-right:-.16em}
+#s7 .prog .t{color:#5c7f71} #s7 .prog .o{color:var(--orange)} #s7 .prog .plus{color:#989898;font-weight:700}
+#s7 .prog p.sub{font:700 17px/1.2 var(--body);letter-spacing:.34em;color:#6b7280;margin-right:-.34em}
+#prove{position:absolute;inset:0;background:#ffffff}
+#prove .left{position:absolute;left:128px;top:112px;width:880px;display:flex;flex-direction:column}
+#prove h3{font:700 66px/1.1 var(--display);letter-spacing:-1px;color:var(--navy);margin-top:20px;white-space:nowrap}
+#prove .city{font:500 34px/1.3 var(--body);color:var(--muted);margin-top:6px}
+#prove .rule{margin-top:24px}
+#prove .flow{display:flex;align-items:center;gap:28px;margin-top:64px}
+#prove .flow b{font:800 88px/1 var(--display);letter-spacing:-2px;color:var(--navy);font-variant-numeric:tabular-nums}
+#prove .flow b.good{color:var(--check)}
+#prove .unit{font:600 32px/1.3 var(--body);color:var(--ink);margin-top:10px}
+#prove .vents{font:700 44px/1.2 var(--display);color:var(--navy);margin-top:56px}
+#prove .dates{font:500 30px/1.3 var(--body);color:var(--muted);margin-top:6px}
+#prove .ask{display:flex;align-items:center;gap:32px;margin-top:44px}
+#prove .ask .tile{flex:none;width:210px;height:210px;border:3px solid var(--navy);border-radius:16px;background:#ffffff;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#prove .ask .tile img{width:100%;height:100%;display:block;max-width:none}
+#prove .ask .tile span{font:600 20px/1.3 var(--body);color:var(--muted);text-align:center;padding:0 18px}
+#prove .ask p{font:700 36px/1.2 var(--display);color:var(--navy);max-width:420px}
+#frame{position:absolute;right:128px;top:90px;width:748px;height:900px;overflow:hidden;background:var(--line);border:1px solid var(--line);border-radius:12px;cursor:ew-resize;touch-action:none;user-select:none;-webkit-user-select:none;box-shadow:0 8px 40px rgba(30,44,85,.18)}
+#frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;max-width:none;pointer-events:none}
+#preclip{position:absolute;inset:0}
+#info{position:absolute;left:18px;top:18px;background:#ffffff;border:4px solid var(--navy);border-radius:14px;padding:14px 24px 16px;box-shadow:0 4px 18px rgba(0,0,0,.35);pointer-events:none}
+#info .which{display:grid}
+#info .which > div{grid-area:1 / 1}
+#info .which > div.off{visibility:hidden}
+#info i{display:block;font:700 30px/1.2 var(--display);font-style:normal;color:var(--orange-ink);white-space:nowrap}
+#info b{display:block;font:800 58px/1.05 var(--display);letter-spacing:-1px;color:var(--navy);white-space:nowrap;font-variant-numeric:tabular-nums;margin-top:2px}
+#info span{display:block;font:600 19px/1.25 var(--body);color:var(--muted);margin-top:12px;white-space:nowrap}
+#wbar{position:absolute;top:0;bottom:0;width:0;border-left:4px solid #ffffff;box-shadow:0 0 6px rgba(0,0,0,.5)}
+#knob{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:60px;height:60px;border-radius:50%;background:#ffffff;border:4px solid var(--navy);box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center}
+
+/* 8 control */
+#s8 .row{position:absolute;left:128px;width:1664px;display:flex;align-items:center;gap:44px;padding-top:40px;border-top:1px solid var(--line)}
+#s8 .row > b{flex:none;width:80px;font:800 96px/1 var(--display);color:var(--orange)}
+#s8 .row h3{font:700 64px/1.15 var(--display);letter-spacing:-.5px;color:var(--navy)}
+
+/* 9 relationships */
+#s9 .hd{gap:20px}
+#s9 .everyone{font:600 40px/1.2 var(--display);color:var(--navy);margin-top:8px}
+#s9 .col{position:absolute;top:392px;width:533px;height:500px;padding:36px;display:flex;flex-direction:column;gap:24px;opacity:0;transition:transform .75s cubic-bezier(.4,0,.2,1),opacity .45s ease}
+#s9 .col.big{opacity:1;transform:translateX(var(--dx)) scale(1.5);z-index:2}
+#s9 .col.small{opacity:1;transform:none}
+#s9 .everyone{opacity:0;transition:opacity .7s ease}
+#s9.done .everyone{opacity:1}
+#s9 .bx{flex:none;display:block;margin-top:-2px;transition:transform .3s ease}
+#s9 .bx .b{stroke:#9aa2b4;transition:stroke .3s ease}
+#s9 .bx .c{stroke:var(--check);stroke-width:3.2;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .4s ease}
+#s9 p.ok .bx{transform:scale(1.12)}
+#s9 p.ok .bx .b{stroke:var(--check)}
+#s9 p.ok .bx .c{stroke-dashoffset:0}
+#s9 .col h3{font:700 44px/1.2 var(--display);color:var(--navy)}
+#s9 .col p{font:500 28px/1.3 var(--body);color:var(--ink);display:flex;gap:16px;align-items:flex-start}
+
+/* vertical balance: each slide's content is centered between the orange rule under the heading and the progress line */
+#s3 .cards{margin-top:107px}
+#s4 .moment.who{margin-top:-14px}
+#sr .study{margin-top:35px}
+#s5 .brow, #s5 .trio{margin-top:68px}
+#s6 .trio, #s6 .hero{margin-top:68px}
+#s7 .st, #s7 .ph, #s7 .rail{margin-top:81px}
+#s8 .row{margin-top:109px}
+#s9 .col{margin-top:33px}
+
+@media (prefers-reduced-motion:reduce){
+  .slide,[data-step],.brow .add,#prog i{transition:none!important}
+}
+</style>
+
+<div id="app">
+  <div id="wrap"><div id="sizer"><main id="stage" tabindex="0" aria-roledescription="slide deck">
+
+    <!-- 1 Opening -->
+    <section class="slide navy" id="s1" data-steps="0">
+      <div class="center">
+        <div class="logos"><img src="img/roofmri-on-navy.png" alt="Roof MRI"><img src="img/redry-on-navy.png" alt="ReDry"></div>
+        <h1>Wet Insulation Is Ruining Your Relationships</h1>
+        <div class="rule big"></div>
+        <div><p class="who">Adam Capps, Founder, Roof MRI and ReDry</p><p class="when">RCMA, Wednesday, October 7</p></div>
+      </div>
+    </section>
+
+    <!-- 2 The number -->
+    <section class="slide navy" id="s2" data-steps="1">
+      <p class="num bad" data-step="0" data-until="0">($500,000)</p>
+      <p class="num good" data-step="1">$375,000</p>
+    </section>
+
+    <!-- 3 Roof MRI + ReDry -->
+    <section class="slide" id="s3" data-steps="0">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>Roof MRI + <em>ReDry</em></h2><div class="rule"></div></div>
+      <div class="cards">
+        <div class="card">
+          <img src="img/roofmri-on-white.png" alt="Roof MRI">
+          <div><p>Patent-allowed moisture detection method.</p><p>We train contractors to perform a Roof MRI.</p><p>We support them with their reports.</p></div>
+        </div>
+        <div class="card o">
+          <img src="img/redry-on-light.png" alt="ReDry">
+          <div><p>Solar-powered moisture removal system.</p><p>Manufactured in Nashville, TN.</p><p>A lease model that aligns everyone on getting it dry quickly.</p></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4 The wet roof dilemma -->
+    <section class="slide" id="s4" data-steps="2">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>The Wet Roof <em>Dilemma</em></h2><div class="rule"></div></div>
+      <div class="moment who" data-step="0" data-until="0"><h3>Contractor</h3><p>Doesn't want to lose the job.</p><p>Can't take a loss on the spot removal.</p><p>Doesn't want to do bad work or lie.</p></div>
+      <div class="moment who" data-step="1" data-until="1"><h3>Owner</h3><p>Doesn't have the funds.</p><p>Doesn't want to risk the warranty.</p><p>Wonders if they should just tear it off later.</p></div>
+      <div class="moment who" data-step="2"><h3>You</h3><p>Want everyone to win the job.</p><p>Don't want a failure.</p><p>Don't want to show distrust of the contractor.</p></div>
+    </section>
+
+    <!-- Research: the study behind the 13% figure, on its own slide, directly before the math -->
+    <section class="slide" id="sr" data-steps="0">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>Our <em>Research</em></h2><div class="rule"></div></div>
+      <div class="study">
+        <div class="facts">
+          <div><b>133</b><p>roofs scanned using the Roof MRI Process</p></div>
+          <div><b>5,600,000+</b><p>SF total</p></div>
+        </div>
+        <div class="eq">
+          <div class="term"><b>8%</b><p>Wet</p></div><i>+</i>
+          <div class="term"><b>5%</b><p>Damp</p></div><i>=</i>
+          <div class="term res"><b>13%</b><p>or 728,000 SF</p></div>
+        </div>
+        <p class="foot">All of these scans were analyzed using the PHD (Physical Hydrology Detection) Scale and each report is on file.</p>
+      </div>
+    </section>
+
+    <!-- 5 The (bad) math: the 13% and 25% bars build, then the cards, then the numbers drop to the good math on this same slide -->
+    <section class="slide" id="s5" data-steps="4">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>The <em>(Bad)</em> Math</h2><div class="rule"></div></div>
+      <div class="key" style="right:128px;top:148px;width:660px;flex-direction:column">
+        <p class="b">100,000 sq ft roof</p>
+        <p><i class="sw n"></i>Coating at $4 a foot</p>
+        <p class="swap"><span data-step="0" data-until="3"><i class="sw r"></i>Tear-out of wet insulation at $12 a foot</span><span data-step="4"><i class="sw g"></i>ReDry at $4 a foot</span></p>
+      </div>
+      <div class="brow" style="top:320px"><p class="bl">Dry roof</p><div class="coat solo"></div><div class="fig"><div><p class="tot">$400,000</p></div></div></div>
+      <div class="brow" style="top:428px" data-step="1"><p class="bl">13% wet or damp</p><div class="coat"></div><div class="add a13"></div>
+        <div class="fig"><div><p class="tot tween" data-v0="556000" data-v1="452000">$556,000</p><p class="more swap"><span data-step="0" data-until="3"><b>+$156,000</b>, 39% more</span><span data-step="4"><b class="g">+$52,000</b>, 13% more</span></p></div></div></div>
+      <div class="brow" style="top:536px" data-step="2"><p class="bl">25% wet or damp</p><div class="coat"></div><div class="add a25"></div>
+        <div class="fig"><div><p class="tot tween" data-v0="700000" data-v1="500000">$700,000</p><p class="more swap"><span data-step="0" data-until="3"><b>+$300,000</b>, 75% more</span><span data-step="4"><b class="g">+$100,000</b>, 25% more</span></p></div></div></div>
+      <div class="trio" data-step="3">
+        <div class="card o"><h3>Cost</h3><p>out of balance.</p></div>
+        <div class="card o"><h3>Disruption</h3><p>the coating's advantage disappears.</p></div>
+        <div class="card o"><h3>Warranty</h3><p>the only thing the extra money buys.</p></div>
+      </div>
+    </section>
+
+    <!-- 6 The solution: the ReDry logo where the math was, the same three cards, now checked -->
+    <section class="slide" id="s6" data-steps="0">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>The <em>Solution</em></h2><div class="rule"></div></div>
+      <img class="hero" src="img/redry-on-light.png" alt="ReDry">
+      <div class="trio">
+        <div class="card o"><svg class="ck" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg><h3>Cost</h3><p>Balanced w/ Coating Cost</p></div>
+        <div class="card o"><svg class="ck" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg><h3>Disruption</h3><p>Keeps Up with Coatings</p></div>
+        <div class="card o"><svg class="ck" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M8 12.5l3 3 5-6"/></svg><h3>Warranty</h3><p>Compatible with Most Warranties</p></div>
+      </div>
+    </section>
+
+    <!-- 7 How it works -->
+    <section class="slide" id="s7" data-steps="8">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>How It <em>Works</em></h2><div class="rule"></div></div>
+      <div class="rail"></div>
+      <div class="st" style="top:318px"><i>1</i><p>Scan and plan before the bid.</p></div>
+      <div class="st" style="top:390px" data-step="1"><i>2</i><p>Contractor, manufacturer and ReDry align.</p></div>
+      <div class="st" style="top:462px" data-step="2"><i>3</i><p>$2 a foot to the contractor. 50% margin at $4.</p></div>
+      <div class="st" style="top:534px" data-step="3"><i>4</i><p>Install the coating and the 2-way vents.</p></div>
+      <div class="st" style="top:606px" data-step="4"><i>5</i><p>ReDry installs the solar vents.</p></div>
+      <div class="st" style="top:678px" data-step="5"><i>6</i><p>ReDry monitors the job.</p></div>
+      <div class="st" style="top:750px" data-step="6"><i>7</i><p>Solar vents come off when it is dry.</p></div>
+      <div class="st" style="top:822px" data-step="7"><i>8</i><p>The 2-way vents stay.</p></div>
+      <div class="ph duo">
+        <img src="img/roofmri-wide.png" alt="Roof MRI">
+        <div><img src="img/drone-institute-logo.png" alt="Drone Institute"><div class="prog"><i class="bar"></i><p><span class="t">Fly It</span> <span class="plus">+</span> <span class="o">Dry It</span></p><p class="sub">Program</p></div></div>
+      </div>
+      <img class="ph" src="img/step-stay.jpg" alt="A capped 2-way vent, the way they arrive, sealed into a coated roof" data-step="3">
+      <img class="ph" src="img/step-solar.jpg" alt="ReDry solar vent installed on a white roof" data-step="4">
+      <img class="ph" src="img/step-monitor.jpg" alt="ReDry solar vents working across a white roof" data-step="5">
+      <img class="ph" src="img/step-off.jpg" alt="A ReDry solar vent on a roof at sunset" data-step="6">
+      <img class="ph" src="img/step-stay-2way.jpg" alt="2-way vents left in place across a coated roof" data-step="7">
+      <div id="prove" data-step="8">
+        <div class="left">
+          <p class="label">How we prove it</p>
+          <h3>McCallum High School</h3>
+          <p class="city">Austin, TX</p>
+          <div class="rule"></div>
+          <div class="flow"><b>35,300</b><svg width="60" height="34" viewBox="0 0 60 34" aria-hidden="true"><path d="M2 17h52M40 4l14 13-14 13" fill="none" stroke="#5a6377" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/></svg><b class="good">14,650</b></div>
+          <p class="unit">sq ft needing to dry</p>
+          <p class="vents">144 vents</p>
+          <p class="dates">Scanned January 21 and June 29, 2026</p>
+          <div class="ask">
+            <div class="tile"><img id="wqr" src="img/walkthrough-qr.png" alt="QR code that opens the walk-through request form"><span id="wqr-missing" hidden>QR code goes here once the form is live.</span></div>
+            <p>Ask for a walk-through of the job</p>
+          </div>
+        </div>
+        <div id="frame" class="noadv" aria-label="Drag to compare the install scan and the 3 month scan">
+          <img src="img/ov-post.jpg" alt="3 month scan, 3,650 SF" draggable="false">
+          <div id="preclip"><img src="img/ov-pre.jpg" alt="Install scan, 13,400 SF" draggable="false"></div>
+          <div id="info"><div class="which"><div id="lab-pre"><i>Install</i><b>13,400 SF</b></div><div id="lab-post"><i>3 Month Scan</i><b>3,650 SF</b></div></div><span>McCallum High School, Building B</span></div>
+          <div id="wbar"><div id="knob"><svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l-6 6 6 6M15 6l6 6-6 6" fill="none" stroke="#1E2C55" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 8 Control the wet roof conversation -->
+    <section class="slide" id="s8" data-steps="2">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>Control the <em>Wet Roof</em> Conversation</h2><div class="rule"></div></div>
+      <div class="row" style="top:322px"><b>1</b><h3>Get Time To Collaborate</h3></div>
+      <div class="row" style="top:498px" data-step="1"><b>2</b><h3>Evaluate All Options</h3></div>
+      <div class="row" style="top:674px" data-step="2"><b>3</b><h3>You're Owed Proof of a Dry Roof</h3></div>
+    </section>
+
+    <!-- 9 Build better relationships: each group arrives large, its boxes check themselves one by one, then it steps back for the next -->
+    <section class="slide" id="s9" data-steps="0">
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>Build Better <em>Relationships</em></h2><div class="rule"></div><p class="everyone">Everyone gets what they want.</p></div>
+      <div class="col card g" style="left:128px;--dx:565.5px"><h3>Contractor</h3>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Doesn't want to lose the job.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Can't take a loss on the spot removal.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Doesn't want to do bad work or lie.</p>
+      </div>
+      <div class="col card g" style="left:693px;--dx:0.5px"><h3>Owner</h3>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Doesn't have the funds.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Doesn't want to risk the warranty.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Wonders if they should just tear it off later.</p>
+      </div>
+      <div class="col card g" style="left:1259px;--dx:-565.5px"><h3>Manufacturers</h3>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Want everyone to win the job.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Don't want a failure.</p>
+        <p><svg class="bx" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect class="b" x="3" y="3" width="18" height="18" rx="4"/><path class="c" d="M7 12.5l3.5 3.5 6.5-8"/></svg>Don't want to show distrust of the contractor.</p>
+      </div>
+    </section>
+
+    <!-- Closing: thank you, contact details with a QR code that saves them, headshot on the right -->
+    <section class="slide navy" id="s10" data-steps="0">
+      <div class="thanks">
+        <div class="logos"><img src="img/roofmri-on-navy.png" alt="Roof MRI"><img src="img/redry-on-navy.png" alt="ReDry"></div>
+        <h1>Thank you for this opportunity!</h1>
+        <div class="rule big"></div>
+        <div class="contact">
+          <div>
+            <p class="nm">Adam Capps</p>
+            <p>ReDry + Roof MRI</p>
+            <p>865.771.3848</p>
+            <p>adam@re-dry.com</p>
+          </div>
+        </div>
+      </div>
+      <div class="scan">
+        <p>My Contact Info:</p>
+        <img class="qr" src="img/adam-contact-qr.png" alt="QR code that saves Adam Capps's contact details">
+      </div>
+    </section>
+
+  </main></div></div>
+
+  <div id="bar">
+    <div id="prog"><i></i></div>
+    <button type="button" id="full" aria-label="Full screen" title="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    <span id="count">1 / 10</span>
+    <button type="button" id="back" aria-label="Back"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+    <button type="button" id="next" aria-label="Next"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+  </div>
+</div>
+
+<script>
+(function(){
+  var stage=document.getElementById("stage"), sizer=document.getElementById("sizer"), wrap=document.getElementById("wrap");
+  var slides=Array.prototype.slice.call(stage.querySelectorAll(".slide"));
+  var count=document.getElementById("count"), prog=document.querySelector("#prog i");
+  var back=document.getElementById("back"), next=document.getElementById("next"), full=document.getElementById("full");
+  var cur=0, step=0, lastCur=-1;
+
+  function fit(){
+    var s=Math.min(wrap.clientWidth/1920, wrap.clientHeight/1080);
+    if(!(s>0)) s=.2;
+    stage.style.transform="scale("+s+")";
+    sizer.style.width=Math.floor(1920*s)+"px"; sizer.style.height=Math.floor(1080*s)+"px";
+  }
+  function steps(i){ return +slides[i].getAttribute("data-steps")||0; }
+  function apply(){
+    slides.forEach(function(sl,i){
+      sl.classList.toggle("active",i===cur);
+      if(i!==cur) return;
+      sl.setAttribute("data-at",step);
+      Array.prototype.forEach.call(sl.querySelectorAll("[data-step]"),function(el){
+        var a=+el.getAttribute("data-step"), u=el.getAttribute("data-until");
+        el.classList.toggle("on", step>=a && (u===null || step<=+u));
+      });
+    });
+    count.textContent=(cur+1)+" / "+slides.length;
+    prog.style.width=((cur+1)/slides.length*100)+"%";
+    back.disabled=(cur===0&&step===0);
+    next.disabled=(cur===slides.length-1&&step===steps(cur));
+    slider.onShow(slides[cur].id==="s7"&&step===8);
+    if(slides[cur].id==="s5") tween(step>=4, cur!==lastCur);
+    if(cur!==lastCur) wants(slides[cur].id==="s9");
+    lastCur=cur;
+  }
+  /* Slide 5: the totals count down from the bad math to the good math. */
+  var tweens=Array.prototype.slice.call(document.querySelectorAll("#s5 .tween")), traf=0;
+  function tween(good,instant){
+    cancelAnimationFrame(traf);
+    var still=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches, t0=null;
+    var from=tweens.map(function(el){ return el._v===undefined ? +el.getAttribute("data-v0") : el._v; });
+    var to=tweens.map(function(el){ return +el.getAttribute(good?"data-v1":"data-v0"); });
+    function paint(k){ tweens.forEach(function(el,i){ el._v=Math.round((from[i]+(to[i]-from[i])*k)/1000)*1000; el.textContent="$"+el._v.toLocaleString("en-US"); }); }
+    if(still||instant||from.join()===to.join()){ paint(1); return; }
+    function tick(ts){ if(t0===null) t0=ts; var t=Math.min(1,(ts-t0)/800), k=1-Math.pow(1-t,3); paint(k); if(t<1) traf=requestAnimationFrame(tick); }
+    traf=requestAnimationFrame(tick);
+  }
+  /* Slide 9 runs by itself: each group comes in large, its three boxes check one by one,
+     then it steps back to its column for the next group. No clicks. */
+  var s9=document.getElementById("s9"), cols=Array.prototype.slice.call(s9.querySelectorAll(".col")), wt=[];
+  function wants(play){
+    wt.forEach(clearTimeout); wt=[];
+    s9.classList.remove("done");
+    cols.forEach(function(c){ c.classList.remove("big","small"); Array.prototype.forEach.call(c.querySelectorAll("p"),function(p){ p.classList.remove("ok"); }); });
+    if(!play) return;
+    if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+      cols.forEach(function(c){ c.classList.add("small"); Array.prototype.forEach.call(c.querySelectorAll("p"),function(p){ p.classList.add("ok"); }); });
+      s9.classList.add("done"); return;
+    }
+    var at=function(ms,fn){ wt.push(setTimeout(fn,ms)); }, per=3300;
+    cols.forEach(function(c,g){
+      var t=600+g*per, ps=c.querySelectorAll("p");
+      at(t,function(){ c.classList.add("big"); });
+      Array.prototype.forEach.call(ps,function(p,k){ at(t+1000+k*650,function(){ p.classList.add("ok"); }); });
+      at(t+per-250,function(){ c.classList.remove("big"); c.classList.add("small"); });
+    });
+    at(600+cols.length*per+500,function(){ s9.classList.add("done"); });
+  }
+  function go(d){
+    if(d>0){
+      if(step<steps(cur)) step++;
+      else if(cur<slides.length-1){ cur++; step=0; }
+    } else {
+      if(step>0) step--;
+      else if(cur>0){ cur--; step=steps(cur); }
+    }
+    apply();
+  }
+
+  /* The before and after slider on slide 7. The frame is the later scan's shape and the
+     earlier scan is clipped over it. It opens at the right edge and bounces twice. */
+  var slider=(function(){
+    var frame=document.getElementById("frame"), clip=document.getElementById("preclip"), bar=document.getElementById("wbar"),
+        info=document.getElementById("info"), labPre=document.getElementById("lab-pre"), labPost=document.getElementById("lab-post");
+    var REST=95, wipe=REST, raf=0, timer=0, shown=false;
+    function set(p){
+      wipe=Math.max(2,Math.min(98,p));
+      clip.style.clipPath="inset(0 "+(100-wipe)+"% 0 0)";
+      bar.style.left=wipe+"%";
+      var mid=(info.offsetLeft+info.offsetWidth/2)/(frame.clientWidth||1)*100, pre=wipe>=mid;
+      labPre.classList.toggle("off",!pre); labPost.classList.toggle("off",pre);
+    }
+    function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } clearTimeout(timer); }
+    function bounce(){
+      if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+      var pts=[REST,74,REST,84,REST], seg=420, t0=null;
+      function ease(t){ return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; }
+      function tick(ts){
+        if(t0===null) t0=ts;
+        var t=(ts-t0)/seg, i=Math.floor(t);
+        if(i>=pts.length-1){ set(REST); raf=0; return; }
+        set(pts[i]+(pts[i+1]-pts[i])*ease(t-i));
+        raf=requestAnimationFrame(tick);
+      }
+      raf=requestAnimationFrame(tick);
+    }
+    function at(e){ var r=frame.getBoundingClientRect(); set((e.clientX-r.left)/r.width*100); }
+    frame.addEventListener("pointerdown",function(e){
+      e.preventDefault(); stop();
+      try{ frame.setPointerCapture(e.pointerId); }catch(_){}
+      at(e);
+      function up(){ frame.removeEventListener("pointermove",at); frame.removeEventListener("pointerup",up); frame.removeEventListener("pointercancel",up); }
+      frame.addEventListener("pointermove",at); frame.addEventListener("pointerup",up); frame.addEventListener("pointercancel",up);
+    });
+    set(REST);
+    return { onShow:function(v){
+      if(v&&!shown){ stop(); set(REST); timer=setTimeout(bounce,650); }
+      if(!v&&shown){ stop(); }
+      shown=v;
+    } };
+  })();
+
+  stage.addEventListener("click",function(e){
+    if(e.target.closest(".noadv,a,button")) return;
+    go(1);
+  });
+  back.addEventListener("click",function(){ go(-1); stage.focus(); });
+  next.addEventListener("click",function(){ go(1); stage.focus(); });
+  full.addEventListener("click",function(){
+    try{
+      if(document.fullscreenElement) document.exitFullscreen();
+      else { var p=document.documentElement.requestFullscreen(); if(p&&p.catch) p.catch(function(){}); }
+    }catch(_){}
+    stage.focus();
+  });
+  window.addEventListener("keydown",function(e){
+    if(e.metaKey||e.ctrlKey||e.altKey) return;
+    var k=e.key;
+    if(k==="ArrowRight"||k==="PageDown"||k===" "||k==="Enter"||k==="ArrowDown"){ e.preventDefault(); go(1); }
+    else if(k==="ArrowLeft"||k==="PageUp"||k==="ArrowUp"||k==="Backspace"){ e.preventDefault(); go(-1); }
+    else if(k==="Home"){ cur=0; step=0; apply(); }
+    else if(k==="End"){ cur=slides.length-1; step=steps(cur); apply(); }
+  });
+  /* McCallum view: the walk-through QR is a file, img/walkthrough-qr.png. Until that file exists, say so instead of showing a broken image. */
+  (function(){
+    var q=document.getElementById("wqr"), m=document.getElementById("wqr-missing");
+    function gone(){ q.hidden=true; m.hidden=false; }
+    q.addEventListener("error",gone);
+    if(q.complete&&q.naturalWidth===0) gone();
+  })();
+  window.addEventListener("resize",fit);
+  document.addEventListener("fullscreenchange",function(){ setTimeout(fit,60); });
+  ["img/step-stay.jpg","img/step-solar.jpg","img/step-monitor.jpg","img/step-off.jpg","img/step-stay-2way.jpg"].forEach(function(u){ new Image().src=u; });
+  fit(); apply(); setTimeout(fit,80);
+})();
+</script>
+
+</body></html>
