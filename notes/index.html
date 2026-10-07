@@ -76,8 +76,12 @@ p,h1{margin:0}
   function push(){
     if(!frameReady||!pos) return;
     frame.contentWindow.postMessage({cur:pos.cur,step:pos.step},location.origin);
-    render(); setTimeout(render,80);
+    render();
   }
+  /* The deck answers each position message once it has applied it; the heading is read then. */
+  window.addEventListener("message",function(e){
+    if(e.source===frame.contentWindow&&e.data&&e.data.applied) render();
+  });
   function render(){
     if(!pos||!frameReady) return;
     var id=ids[pos.cur]||"", n=stepsOf[pos.cur]||0;

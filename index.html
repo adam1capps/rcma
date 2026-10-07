@@ -583,8 +583,8 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
         var c=e.data.cur, s=e.data.step;
         if(typeof c!=="number"||!(c>=0&&c<slides.length)) return;
         c=Math.floor(c); s=Math.max(0,Math.min(steps(c),Math.floor(+s||0)));
-        if(c===cur&&s===step) return;
-        cur=c; step=s; apply();
+        if(c!==cur||s!==step){ cur=c; step=s; apply(); }
+        window.parent.postMessage({applied:true,cur:cur,step:step},location.origin);
       });
     }
     return {publish:publish,follow:follow};
