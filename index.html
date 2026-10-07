@@ -123,6 +123,8 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
 .swap{display:grid!important}
 .swap > span{grid-area:1 / 1;display:flex;align-items:center;gap:14px;white-space:nowrap}
 .more.swap > span{display:block}
+#s5 .hswap > h2{grid-area:1 / 1}
+#s5 h2 em.good{color:var(--green)}
 #s6 .trio .card{position:relative;min-height:187px}
 #s6 .trio p{padding-right:64px}
 #s6 .trio .ck{position:absolute;right:28px;top:24px}
@@ -275,7 +277,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
 
     <!-- 5 The (bad) math: the 13% and 25% bars build, then the cards, then the numbers drop to the good math on this same slide -->
     <section class="slide" id="s5" data-steps="4">
-      <div class="hd"><p class="label">RCMA, October 7</p><h2>The <em>(Bad)</em> Math</h2><div class="rule"></div></div>
+      <div class="hd"><p class="label">RCMA, October 7</p><div class="swap hswap"><h2 data-step="0" data-until="3">The <em>(Bad)</em> Math</h2><h2 data-step="4">The <em class="good">(Good)</em> Math</h2></div><div class="rule"></div></div>
       <div class="key" style="right:128px;top:148px;width:660px;flex-direction:column">
         <p class="b">100,000 sq ft roof</p>
         <p><i class="sw n"></i>Coating at $4 a foot</p>
