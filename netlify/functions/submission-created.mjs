@@ -107,7 +107,7 @@ function leadDetails(lead, submitted) {
     `Email: ${lead.email}`,
     `Phone: ${lead.phone}`,
     `Submitted: ${when}`,
-    "Form: Walk-through request, rcma-talk.netlify.app/walkthrough/",
+    "Form: Walk-through request, rcma2026.re-dry.com/walkthrough/",
   ].join("\n");
 }
 

@@ -4,3 +4,8 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+
+[[headers]]
+  for = "/adam-capps.vcf"
+  [headers.values]
+    Content-Type = "text/vcard; charset=utf-8"
