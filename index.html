@@ -77,6 +77,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
 
 /* 3 brands */
 #s3 .cards{position:absolute;left:128px;top:318px;width:1664px;display:flex;gap:48px}
+#s3 .mission{font:600 40px/1.2 var(--display);color:var(--navy);margin-top:8px}
 #s3 .card{flex:1;padding:40px 56px;display:flex;flex-direction:column;gap:28px}
 #s3 .card img{height:120px;width:auto;align-self:flex-start;display:block}
 #s3 .card p{font:500 30px/1.3 var(--body);color:var(--ink);padding:18px 0;border-top:1px solid var(--line)}
@@ -202,7 +203,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
 #s9 .col p{font:500 28px/1.3 var(--body);color:var(--ink);display:flex;gap:16px;align-items:flex-start}
 
 /* vertical balance: each slide's content is centered between the orange rule under the heading and the progress line */
-#s3 .cards{margin-top:107px}
+#s3 .cards{margin-top:145px}
 #s4 .moment.who{margin-top:-14px}
 #sr .study{margin-top:35px}
 #s5 .brow, #s5 .trio{margin-top:68px}
@@ -237,7 +238,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
 
     <!-- 3 Roof MRI + ReDry -->
     <section class="slide" id="s3" data-steps="0">
-      <div class="hd"><p class="label">RCMA, October 7</p><h2>Roof MRI + <em>ReDry</em></h2><div class="rule"></div></div>
+      <div class="hd"><p class="label">RCMA, October 7</p><h2>Roof MRI + <em>ReDry</em></h2><div class="rule"></div><p class="mission">Help the contractors who care, beat the guys who want to cut corners.</p></div>
       <div class="cards">
         <div class="card">
           <img src="img/roofmri-on-white.png" alt="Roof MRI">
@@ -496,7 +497,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
   var slider=(function(){
     var frame=document.getElementById("frame"), clip=document.getElementById("preclip"), bar=document.getElementById("wbar"),
         info=document.getElementById("info"), labPre=document.getElementById("lab-pre"), labPost=document.getElementById("lab-post");
-    var REST=95, wipe=REST, raf=0, timer=0, shown=false;
+    var REST=95, FAR=5, wipe=REST, raf=0, timer=0, auto=0, side=REST, shown=false;
     function set(p){
       wipe=Math.max(2,Math.min(98,p));
       clip.style.clipPath="inset(0 "+(100-wipe)+"% 0 0)";
@@ -504,7 +505,17 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
       var mid=(info.offsetLeft+info.offsetWidth/2)/(frame.clientWidth||1)*100, pre=wipe>=mid;
       labPre.classList.toggle("off",!pre); labPost.classList.toggle("off",pre);
     }
-    function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } clearTimeout(timer); }
+    function stop(){ if(raf){ cancelAnimationFrame(raf); raf=0; } clearTimeout(timer); clearTimeout(auto); auto=0; }
+    /* Hands-free: 30 seconds after the view appears the wipe sweeps to the other scan, then every 5 seconds it sweeps back. */
+    function glide(to,ms){
+      if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches){ set(to); return; }
+      var from=wipe, t0=null;
+      function ease(t){ return t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; }
+      function tick(ts){ if(t0===null) t0=ts; var t=Math.min(1,(ts-t0)/ms); set(from+(to-from)*ease(t)); if(t<1) raf=requestAnimationFrame(tick); else raf=0; }
+      if(raf) cancelAnimationFrame(raf);
+      raf=requestAnimationFrame(tick);
+    }
+    function cycle(){ side=(side===REST)?FAR:REST; glide(side,1100); auto=setTimeout(cycle,5000); }
     function bounce(){
       if(window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       var pts=[REST,74,REST,84,REST], seg=420, t0=null;
@@ -528,7 +539,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
     });
     set(REST);
     return { onShow:function(v){
-      if(v&&!shown){ stop(); set(REST); timer=setTimeout(bounce,650); }
+      if(v&&!shown){ stop(); set(REST); side=REST; timer=setTimeout(bounce,650); auto=setTimeout(cycle,30000); }
       if(!v&&shown){ stop(); }
       shown=v;
     } };
