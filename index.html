@@ -581,11 +581,12 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
      Follow mode (?follow=1, used inside /notes/) takes them from the parent page and ignores local input.
      Without either, nothing here runs. */
   var sync=(function(){
-    var q=new URLSearchParams(location.search), key=q.get("drive"), follow=q.get("follow")==="1", last="";
+    var q=new URLSearchParams(location.search), key=q.get("drive"), follow=q.get("follow")==="1", last="", first=true;
     function publish(){
       if(!key) return;
       var s=cur+":"+step; if(s===last) return; last=s;
-      fetch("/.netlify/functions/position",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,cur:cur,step:step}),keepalive:true}).catch(function(){});
+      var body={key:key,cur:cur,step:step}; if(first){ body.reset=true; first=false; }
+      fetch("/.netlify/functions/position",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body),keepalive:true}).catch(function(){});
     }
     if(follow){
       document.getElementById("bar").hidden=true;

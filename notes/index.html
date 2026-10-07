@@ -8,8 +8,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;600;700&family=Poppins:wght@700&display=swap">
 <style>
-/* Presenter view for the iPad. The deck renders in follow mode on top, matching the projector; notes below.
-   Open as /notes/?key=KEY. Same tokens as the deck. */
+/* Presenter view for the iPad. Open as /notes/?key=KEY.
+   Left: run time on top, the current slide (the deck in follow mode) in the middle, the next slide centered
+   beneath. On a forward move the current slide drifts up under the timer and fades while the next slide
+   rises into its place. Right or below: slide counter, sync status, heading, notes. */
 :root{
   --navy:#1e2c55; --orange:#ea993f; --ink:#2d3344; --muted:#5a6377; --line:#dfe3ea;
   --green-ink:#047857; --red-ink:#dc2626;
@@ -21,8 +23,17 @@ html,body{margin:0;height:100%}
 body{background:#ffffff;color:var(--ink);font-family:var(--body);display:flex;flex-direction:column;height:100dvh;overflow:hidden;-webkit-font-smoothing:antialiased}
 p,h1{margin:0}
 
-#slide{flex:none;width:100%;aspect-ratio:16/9;background:var(--navy);position:relative}
-#slide iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none;background:#ffffff}
+#left{flex:none;width:100%;display:flex;flex-direction:column;padding:12px 20px 8px}
+#time{font:700 34px/1 var(--display);color:var(--navy);font-variant-numeric:tabular-nums;display:flex;align-items:baseline;gap:12px;margin-bottom:12px}
+#time .lbl{font:600 13px/1.2 var(--body);letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+#stage{position:relative;width:100%}
+.holder{position:absolute;background:#ffffff;overflow:hidden;transition:left .45s ease,top .45s ease,width .45s ease,height .45s ease,opacity .35s ease}
+.holder.jump{transition:none}
+.holder iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;pointer-events:none;background:#ffffff}
+.holder[data-role="main"]{background:var(--navy);z-index:1}
+.holder[data-role="next"]{border:1px solid var(--line);border-radius:6px;z-index:0}
+#nextlabel{position:absolute;left:0;right:0;text-align:center;font:600 13px/1.2 var(--body);letter-spacing:2px;text-transform:uppercase;color:var(--muted)}
+#stage.end .holder[data-role="next"]{visibility:hidden}
 
 #panel{flex:1;min-height:0;display:flex;flex-direction:column;gap:10px;padding:14px 20px calc(14px + env(safe-area-inset-bottom,0px));border-top:3px solid var(--orange)}
 #top{display:flex;align-items:baseline;justify-content:space-between;gap:16px}
@@ -31,20 +42,31 @@ p,h1{margin:0}
 #status.live{color:var(--green-ink)}
 #status.bad{color:var(--red-ink)}
 #title{font:700 24px/1.2 var(--display);color:var(--navy);min-height:1.2em}
-#notes{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;font:500 22px/1.5 var(--body);color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+#notes{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;font:500 22px/1.45 var(--body);color:var(--ink)}
+#notes p{margin:0 0 .8em;white-space:pre-wrap;overflow-wrap:anywhere}
+#notes p:empty{margin:0;height:.4em}
 #notes.empty{color:var(--muted)}
 
 @media (min-width:1100px) and (orientation:landscape){
   body{flex-direction:row}
-  #slide{width:60%;flex:none;align-self:center}
+  #left{width:60%;height:100%;justify-content:center;padding:24px 28px}
+  #time{font-size:44px}
   #panel{height:100%;border-top:0;border-left:3px solid var(--orange);padding:24px 28px calc(24px + env(safe-area-inset-bottom,0px))}
   #title{font-size:30px}
   #notes{font-size:26px}
 }
+@media (prefers-reduced-motion:reduce){ .holder{transition:none} }
 </style>
 </head>
 <body>
-<div id="slide"><iframe id="deck" src="/?follow=1" title="Current slide"></iframe></div>
+<div id="left">
+  <p id="time"><span class="lbl">Run time</span><span id="clock">0:00</span></p>
+  <div id="stage">
+    <div class="holder" data-role="main"><iframe src="/?follow=1" title="Current slide"></iframe></div>
+    <p id="nextlabel">Next</p>
+    <div class="holder" data-role="next"><iframe src="/?follow=1" title="Next slide"></iframe></div>
+  </div>
+</div>
 <section id="panel">
   <div id="top"><p id="where"></p><p id="status"></p></div>
   <h1 id="title"></h1>
@@ -53,43 +75,108 @@ p,h1{margin:0}
 <script>
 (function(){
   var q=new URLSearchParams(location.search), key=q.get("key");
-  var frame=document.getElementById("deck"), where=document.getElementById("where"), title=document.getElementById("title"),
-      notes=document.getElementById("notes"), status=document.getElementById("status");
-  var ids=[], stepsOf=[], notesData={}, pos=null, changedAt=0, frameReady=false, inFlight=false, fails=0, live=false;
+  var stage=document.getElementById("stage"), nextLabel=document.getElementById("nextlabel"), clockEl=document.getElementById("clock"),
+      where=document.getElementById("where"), title=document.getElementById("title"), notes=document.getElementById("notes"), status=document.getElementById("status");
+  var holders=stage.querySelectorAll(".holder"), mainH=holders[0], nextH=holders[1];
+  var ids=[], stepsOf=[], notesData={}, pos=null, startedAt=null, changedAt=0, inFlight=false, fails=0, live=false, busy=false;
+  var slots={main:null,next:null}, reduced=window.matchMedia&&window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function setStatus(cls,text){ status.className=cls; status.textContent=text; }
   if(!key){ setStatus("bad","Add ?key= to the address"); return; }
 
   fetch("notes.json",{cache:"no-store"}).then(function(r){ return r.json(); }).then(function(d){ notesData=d||{}; render(); }).catch(function(){});
 
-  frame.addEventListener("load",function(){
-    var doc=frame.contentDocument, sl=doc?doc.querySelectorAll(".slide"):[];
-    ids=Array.prototype.map.call(sl,function(s){ return s.id; });
-    stepsOf=Array.prototype.map.call(sl,function(s){ return +s.getAttribute("data-steps")||0; });
-    frameReady=true; push();
+  function win(h){ return h.querySelector("iframe").contentWindow; }
+  function doc(h){ return h.querySelector("iframe").contentDocument; }
+  Array.prototype.forEach.call(holders,function(h){
+    h.querySelector("iframe").addEventListener("load",function(){
+      var d=doc(h), sl=d?d.querySelectorAll(".slide"):[];
+      if(!ids.length&&sl.length){ ids=Array.prototype.map.call(sl,function(s){ return s.id; }); stepsOf=Array.prototype.map.call(sl,function(s){ return +s.getAttribute("data-steps")||0; }); }
+      h.setAttribute("data-ready","1");
+      if(h===mainH) showMain(); else pushNext();
+    });
   });
+  function ready(h){ return h.getAttribute("data-ready")==="1"; }
 
-  function heading(){
-    var doc=frame.contentDocument, s=doc&&doc.querySelector(".slide.active"), h=s&&s.querySelector("h2,h1");
-    return h?h.textContent.replace(/\s+/g," ").trim():"";
+  /* Geometry: the main slot spans the column, the next slot is 46% wide, centered beneath. */
+  function place(h,g){ h.style.left=g.left+"px"; h.style.top=g.top+"px"; h.style.width=g.width+"px"; h.style.height=g.height+"px"; }
+  function layout(){
+    var W=stage.clientWidth, gap=36, nw=Math.round(W*0.46), mh=Math.round(W*9/16), nh=Math.round(nw*9/16);
+    slots.main={left:0,top:0,width:W,height:mh};
+    slots.next={left:Math.round((W-nw)/2),top:mh+gap,width:nw,height:nh};
+    stage.style.height=(mh+gap+nh)+"px";
+    nextLabel.style.top=(mh+9)+"px";
+    if(!busy){ mainH.classList.add("jump"); nextH.classList.add("jump"); place(mainH,slots.main); place(nextH,slots.next); void stage.offsetWidth; mainH.classList.remove("jump"); nextH.classList.remove("jump"); }
   }
-  function push(){
-    if(!frameReady||!pos) return;
-    frame.contentWindow.postMessage({cur:pos.cur,step:pos.step},location.origin);
-    render();
+  window.addEventListener("resize",layout); layout();
+
+  function post(h,p){ if(ready(h)) win(h).postMessage({cur:p.cur,step:p.step},location.origin); }
+  function showMain(){ if(pos){ post(mainH,pos); render(); } }
+  /* The next slide's opening state, or nothing on the last slide. */
+  function nextOf(p){ return p.cur+1<ids.length?{cur:p.cur+1,step:0}:null; }
+  function pushNext(){
+    if(!pos||!ids.length) return;
+    var n=nextOf(pos);
+    stage.classList.toggle("end",!n); nextLabel.textContent=n?"Next":"Last slide";
+    if(n) post(nextH,n);
   }
+
+  /* A new position arrived. Same slide: the deck animates the click itself. One slide forward: the
+     next preview rises into the main slot while the current slide drifts up and fades. Anything else:
+     a plain crossfade. */
+  function onChange(p){
+    var prev=pos; pos=p; changedAt=Date.now();
+    if(!prev||!ids.length){ showMain(); pushNext(); return; }
+    if(p.cur===prev.cur){ post(mainH,p); render(); return; }
+    if(p.cur===prev.cur+1&&!busy&&!reduced&&nextOf(prev)&&ready(nextH)){ advance(); return; }
+    crossfade();
+  }
+  function advance(){
+    busy=true;
+    mainH.style.top=(slots.main.top-48)+"px"; mainH.style.opacity="0";
+    nextH.style.zIndex="2"; place(nextH,slots.main);
+    setTimeout(function(){
+      var old=mainH; mainH=nextH; nextH=old;
+      mainH.setAttribute("data-role","main"); mainH.style.zIndex="";
+      nextH.setAttribute("data-role","next"); nextH.style.zIndex="";
+      nextH.classList.add("jump"); place(nextH,slots.next); nextH.style.opacity="0"; void nextH.offsetWidth; nextH.classList.remove("jump");
+      busy=false;
+      post(mainH,pos); render(); pushNext();
+      requestAnimationFrame(function(){ nextH.style.opacity="1"; });
+    },480);
+  }
+  function crossfade(){
+    if(reduced){ post(mainH,pos); render(); pushNext(); return; }
+    busy=true; mainH.style.opacity="0"; nextH.style.opacity="0";
+    setTimeout(function(){ post(mainH,pos); pushNext(); mainH.style.opacity="1"; nextH.style.opacity="1"; busy=false; render(); },200);
+  }
+
   /* The deck answers each position message once it has applied it; the heading is read then. */
   window.addEventListener("message",function(e){
-    if(e.source===frame.contentWindow&&e.data&&e.data.applied) render();
+    if(e.source===win(mainH)&&e.data&&e.data.applied) render();
   });
+  function heading(){
+    var d=doc(mainH), s=d&&d.querySelector(".slide.active"), h=s&&s.querySelector("h2,h1");
+    return h?h.textContent.replace(/\s+/g," ").trim():"";
+  }
   function render(){
-    if(!pos||!frameReady) return;
+    if(!pos||!ids.length) return;
     var id=ids[pos.cur]||"", n=stepsOf[pos.cur]||0;
     where.textContent="Slide "+(pos.cur+1)+" of "+ids.length+(n?", click "+pos.step+" of "+n:"");
     title.textContent=heading();
     var t=notesData[id+":"+pos.step]; if(typeof t!=="string") t=notesData[id];
-    if(typeof t==="string"&&t.trim()){ notes.textContent=t; notes.classList.remove("empty"); }
-    else { notes.textContent="No notes yet"; notes.classList.add("empty"); }
+    notes.textContent="";
+    if(typeof t==="string"&&t.trim()){
+      notes.classList.remove("empty");
+      t.split("\n").forEach(function(line){ var p=document.createElement("p"); p.textContent=line; notes.appendChild(p); });
+    } else { notes.classList.add("empty"); var p=document.createElement("p"); p.textContent="No notes yet"; notes.appendChild(p); }
+  }
+
+  /* Run time: since the first click away from the opening slide. Loading the drive address fresh resets it. */
+  function clock(){
+    if(!startedAt){ clockEl.textContent="0:00"; return; }
+    var s=Math.max(0,Math.round((Date.now()-startedAt)/1000)), h=Math.floor(s/3600), m=Math.floor(s%3600/60), x=s%60;
+    clockEl.textContent=(h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");
   }
   function age(){ return changedAt?Math.round((Date.now()-changedAt)/1000)+"s":""; }
   function showLive(){ setStatus("live","Live"+(changedAt?" · "+age():"")); }
@@ -103,13 +190,14 @@ p,h1{margin:0}
     }).then(function(p){
       if(!p) return;
       fails=0; live=true;
-      if(!pos||p.cur!==pos.cur||p.step!==pos.step){ pos={cur:p.cur,step:p.step}; changedAt=Date.now(); push(); }
+      startedAt=p.startedAt||null; clock();
+      if(!pos||p.cur!==pos.cur||p.step!==pos.step) onChange({cur:p.cur,step:p.step});
       showLive();
     }).catch(function(){ if(++fails>=3){ live=false; setStatus("bad","Offline"); } })
       .then(function(){ inFlight=false; });
   }
   poll(); setInterval(poll,400);
-  setInterval(function(){ if(live) showLive(); },1000);
+  setInterval(function(){ clock(); if(live) showLive(); },1000);
 })();
 </script>
 </body>

@@ -1,7 +1,10 @@
 // Shared slide position for the presenter view on another device.
 //
-//   GET  /.netlify/functions/position?key=KEY          -> { cur, step, at }
-//   POST /.netlify/functions/position { key, cur, step } -> stores and echoes { cur, step, at }
+//   GET  /.netlify/functions/position?key=KEY                 -> { cur, step, at, startedAt }
+//   POST /.netlify/functions/position { key, cur, step, reset } -> stores and echoes { cur, step, at, startedAt }
+//
+// startedAt is the talk clock: set on the first move away from the opening slide, kept through
+// later moves (Home included), cleared when the deck is loaded fresh in drive mode (reset: true).
 //
 // KEY must equal the DECK_KEY environment variable. Without a match every call is 401.
 // The deck in drive mode (/?drive=KEY) POSTs on each change; /notes/ polls with GET.
@@ -27,7 +30,7 @@ export default async (req) => {
   if (req.method === "GET") {
     const key = new URL(req.url).searchParams.get("key");
     if (!matches(key, secret)) return reply(401, { error: "key" });
-    const pos = (await store().get(KEY, { type: "json" })) || { cur: 0, step: 0, at: null };
+    const pos = (await store().get(KEY, { type: "json" })) || { cur: 0, step: 0, at: null, startedAt: null };
     return reply(200, pos);
   }
 
@@ -42,7 +45,11 @@ export default async (req) => {
     const cur = index(body.cur);
     const step = index(body.step);
     if (cur === null || step === null) return reply(400, { error: "cur and step must be non-negative integers" });
-    const pos = { cur, step, at: Date.now() };
+    const now = Date.now();
+    const prev = body.reset ? null : await store().get(KEY, { type: "json" });
+    let startedAt = (prev && prev.startedAt) || null;
+    if (!startedAt && (cur > 0 || step > 0)) startedAt = now;
+    const pos = { cur, step, at: now, startedAt };
     await store().setJSON(KEY, pos);
     return reply(200, pos);
   }
