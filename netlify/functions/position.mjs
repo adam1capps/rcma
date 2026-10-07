@@ -17,13 +17,16 @@ const HEADERS = { "content-type": "application/json", "cache-control": "no-store
 const reply = (status, body) => new Response(JSON.stringify(body), { status, headers: HEADERS });
 const store = () => deps.getStore({ name: STORE, consistency: "strong" });
 const index = (v) => (Number.isInteger(v) && v >= 0 ? v : null);
+// Keys are compared after trimming and lowercasing, so a phone keyboard capitalizing the first letter still matches.
+const norm = (v) => (typeof v === "string" ? v.trim().toLowerCase() : "");
+const matches = (key, secret) => !!secret && norm(key) === norm(secret);
 
 export default async (req) => {
   const secret = process.env.DECK_KEY;
 
   if (req.method === "GET") {
     const key = new URL(req.url).searchParams.get("key");
-    if (!secret || key !== secret) return reply(401, { error: "key" });
+    if (!matches(key, secret)) return reply(401, { error: "key" });
     const pos = (await store().get(KEY, { type: "json" })) || { cur: 0, step: 0, at: null };
     return reply(200, pos);
   }
@@ -35,7 +38,7 @@ export default async (req) => {
     } catch {
       return reply(400, { error: "json" });
     }
-    if (!secret || !body || body.key !== secret) return reply(401, { error: "key" });
+    if (!body || !matches(body.key, secret)) return reply(401, { error: "key" });
     const cur = index(body.cur);
     const step = index(body.step);
     if (cur === null || step === null) return reply(400, { error: "cur and step must be non-negative integers" });
