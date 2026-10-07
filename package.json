@@ -1,0 +1,8 @@
+{
+  "name": "rcma-talk",
+  "private": true,
+  "description": "RCMA talk web deck, walk-through form, lead alerts, and presenter sync",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.3"
+  }
+}

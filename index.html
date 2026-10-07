@@ -444,6 +444,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
     if(slides[cur].id==="s5") tween(step>=4, cur!==lastCur);
     if(cur!==lastCur) wants(slides[cur].id==="s9");
     lastCur=cur;
+    sync.publish();
   }
   /* Slide 5: the totals count down from the bad math to the good math. */
   var tweens=Array.prototype.slice.call(document.querySelectorAll("#s5 .tween")), traf=0;
@@ -479,6 +480,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
     at(600+cols.length*per+500,function(){ s9.classList.add("done"); });
   }
   function go(d){
+    if(sync.follow) return;
     if(d>0){
       if(step<steps(cur)) step++;
       else if(cur<slides.length-1){ cur++; step=0; }
@@ -546,6 +548,7 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
     stage.focus();
   });
   window.addEventListener("keydown",function(e){
+    if(sync.follow) return;
     if(e.metaKey||e.ctrlKey||e.altKey) return;
     var k=e.key;
     if(k==="ArrowRight"||k==="PageDown"||k===" "||k==="Enter"||k==="ArrowDown"){ e.preventDefault(); go(1); }
@@ -563,6 +566,29 @@ h2 em,h1 em{font-style:normal;color:var(--orange)}
   window.addEventListener("resize",fit);
   document.addEventListener("fullscreenchange",function(){ setTimeout(fit,60); });
   ["img/step-stay.jpg","img/step-solar.jpg","img/step-monitor.jpg","img/step-off.jpg","img/step-stay-2way.jpg"].forEach(function(u){ new Image().src=u; });
+  /* Presenter sync. Drive mode (?drive=KEY) publishes the slide and click after every change.
+     Follow mode (?follow=1, used inside /notes/) takes them from the parent page and ignores local input.
+     Without either, nothing here runs. */
+  var sync=(function(){
+    var q=new URLSearchParams(location.search), key=q.get("drive"), follow=q.get("follow")==="1", last="";
+    function publish(){
+      if(!key) return;
+      var s=cur+":"+step; if(s===last) return; last=s;
+      fetch("/.netlify/functions/position",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({key:key,cur:cur,step:step}),keepalive:true}).catch(function(){});
+    }
+    if(follow){
+      document.getElementById("bar").hidden=true;
+      window.addEventListener("message",function(e){
+        if(e.source!==window.parent||!e.data||typeof e.data!=="object") return;
+        var c=e.data.cur, s=e.data.step;
+        if(typeof c!=="number"||!(c>=0&&c<slides.length)) return;
+        c=Math.floor(c); s=Math.max(0,Math.min(steps(c),Math.floor(+s||0)));
+        if(c===cur&&s===step) return;
+        cur=c; step=s; apply();
+      });
+    }
+    return {publish:publish,follow:follow};
+  })();
   fit(); apply(); setTimeout(fit,80);
 })();
 </script>
