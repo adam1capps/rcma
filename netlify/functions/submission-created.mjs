@@ -1,4 +1,6 @@
-// Runs on every verified submission to the "walkthrough" form (Netlify Forms).
+// Runs on every verified Netlify Forms submission. Handles the forms listed in
+// FORMS below ("walkthrough" from the RCMA talk, "aws2026" from the American
+// WeatherStar Fast Academy talk) and ignores any other form.
 // Sends two emails through SendGrid, from adam@re-dry.com:
 //   A. Right away, to the assistant: the lead, and a drafted follow-up to the lead.
 //   B. At 4:00 PM Central, to Adam: the same draft, for review. A lead that arrives
@@ -8,7 +10,6 @@
 
 // ---- Wording. Edit here. ---------------------------------------------------
 
-const FORM_NAME = "walkthrough";
 const FROM = { email: "adam@re-dry.com", name: "Adam Capps" };
 const ASSISTANT = "assistant@re-dry.com";
 const ADAM = "adam@re-dry.com";
@@ -17,23 +18,47 @@ const TIME_ZONE = "America/Chicago";
 const REVIEW_HOUR = 16; // 4:00 PM
 const ROLLOVER_HOUR = 8; // 8:00 AM next day, for leads at or after REVIEW_HOUR
 
-const ASSISTANT_SUBJECT = (lead) => `New lead from the RCMA talk: ${lead.name}, ${lead.company}`;
 const ASSISTANT_INTRO = "I have a lead and I need you to make sure I follow up with it.";
 
 const REVIEW_SUBJECT = (lead) => `Review and send: follow-up to ${lead.name}, ${lead.company}`;
 const REVIEW_INTRO = "Draft follow-up to this lead, for your review.";
 
-const DRAFT_SUBJECT = "Walk-through of the McCallum High School job";
-const DRAFT_BODY = (lead) => `Hi ${lead.name},
+const SIGNATURE = `Adam Capps
+ReDry + Roof MRI
+865.771.3848
+adam@re-dry.com`;
+
+const ROOF_MRI_SIGNUP_URL = "https://app.roof-mri.com/?mode=signup";
+
+// One entry per form name. `label` is the "Form:" line in both emails.
+const FORMS = {
+  walkthrough: {
+    label: "Walk-through request, rcma2026.re-dry.com/walkthrough/",
+    assistantSubject: (lead) => `New lead from the RCMA talk: ${lead.name}, ${lead.company}`,
+    draftSubject: "Walk-through of the McCallum High School job",
+    draftBody: (lead) => `Hi ${lead.name},
 
 Thank you for asking about a walk-through of the McCallum High School job in Austin after my RCMA talk.
 
 What days work for you? I will set it up.
 
-Adam Capps
-ReDry + Roof MRI
-865.771.3848
-adam@re-dry.com`;
+${SIGNATURE}`,
+  },
+  aws2026: {
+    label: "Free Prelim signup, rcma2026.re-dry.com/aws2026/",
+    assistantSubject: (lead) =>
+      `New lead from the American WeatherStar Fast Academy talk: ${lead.name}, ${lead.company}`,
+    draftSubject: "Your free Prelim",
+    draftBody: (lead) => `Hi ${lead.name},
+
+Thank you for signing up for a free Prelim after my talk at the American WeatherStar Fast Academy.
+
+Sign Up Here! for the Roof MRI App:
+${ROOF_MRI_SIGNUP_URL}
+
+${SIGNATURE}`,
+  },
+};
 
 // ---- Handler ---------------------------------------------------------------
 
@@ -44,7 +69,8 @@ export default async (req) => {
   } catch {
     return new Response("bad request", { status: 400 });
   }
-  if (!payload || payload.form_name !== FORM_NAME) {
+  const form = payload && Object.hasOwn(FORMS, payload.form_name) ? FORMS[payload.form_name] : null;
+  if (!form) {
     return new Response("ignored", { status: 200 });
   }
 
@@ -57,12 +83,12 @@ export default async (req) => {
     return new Response("no key", { status: 200 });
   }
 
-  const details = leadDetails(lead, submitted);
-  const draft = `Subject: ${DRAFT_SUBJECT}\n\n${DRAFT_BODY(lead)}`;
+  const details = leadDetails(lead, submitted, form.label);
+  const draft = `Subject: ${form.draftSubject}\n\n${form.draftBody(lead)}`;
 
   const assistant = await sendMail(key, {
     to: ASSISTANT,
-    subject: ASSISTANT_SUBJECT(lead),
+    subject: form.assistantSubject(lead),
     text: `${ASSISTANT_INTRO}\n\n${details}\n\nDraft follow-up for my review:\n\n${draft}\n`,
   });
 
@@ -91,7 +117,7 @@ function pickLead(data) {
   };
 }
 
-function leadDetails(lead, submitted) {
+function leadDetails(lead, submitted, formLabel) {
   const when = new Intl.DateTimeFormat("en-US", {
     timeZone: TIME_ZONE,
     month: "short",
@@ -107,7 +133,7 @@ function leadDetails(lead, submitted) {
     `Email: ${lead.email}`,
     `Phone: ${lead.phone}`,
     `Submitted: ${when}`,
-    "Form: Walk-through request, rcma2026.re-dry.com/walkthrough/",
+    `Form: ${formLabel}`,
   ].join("\n");
 }
 
